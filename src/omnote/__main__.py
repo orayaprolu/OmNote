@@ -1,9 +1,12 @@
+# src/omnote/__main__.py
 from __future__ import annotations
-import sys, argparse, os
+import sys
+import argparse
+import os
 from .app import main as app_main
 
-def main() -> None:
-    parser = argparse.ArgumentParser(prog="micropad")
+def main() -> int:
+    parser = argparse.ArgumentParser(prog="omnote")
     parser.add_argument("--system-theme", action="store_true", help="Use system theme (ignore custom CSS)")
     parser.add_argument("--no-watch", action="store_true", help="Disable file/theme watching")
     args = parser.parse_args()
@@ -13,7 +16,7 @@ def main() -> None:
     if args.no_watch:
         os.environ["MICROPAD_NO_WATCH"] = "1"
 
-    app_main()
+    return app_main()
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

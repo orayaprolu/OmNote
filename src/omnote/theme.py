@@ -20,6 +20,7 @@ except Exception:
 
 # -------------------- globals / constants --------------------
 _CURRENT_PROVIDER: Optional[Gtk.CssProvider] = None
+_WATCHER_SINGLETON: Optional["ThemeWatcher"] = None  # singleton handle
 
 HEX_RE = r"(?:#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|0x[0-9a-fA-F]{6}|rgb:[0-9a-fA-F]{2}/[0-9a-fA-F]{2}/[0-9a-fA-F]{2})"
 
@@ -35,7 +36,6 @@ HYPR_USER_CONF   = Path("~/.config/hypr/hyprland.conf").expanduser()
 
 # -------------------- utils --------------------
 def _dbg(msg: str) -> None:
-    # Only print when debug is enabled
     if os.getenv("MICROPAD_DEBUG"):
         print(f"[MicroPad:theme] {msg}")
 
@@ -90,7 +90,6 @@ def _css_from_palette(pal: Dict[str, Optional[str]], *, dark: bool) -> str:
     selfg = pal.get("sel_fg") or "@term_fg"
     caret = pal.get("caret")  or "@term_fg"
 
-    # slightly stronger mix in light mode so entries are visible
     entry_mix = 0.06 if dark else 0.12
 
     css = [
@@ -114,7 +113,6 @@ def _css_from_palette(pal: Dict[str, Optional[str]], *, dark: bool) -> str:
         "  background-color: @term_sel_bg;",
         "  color: @term_sel_fg;",
         "}",
-        # ---- polish: headerbar + find/search widgets ----
         "headerbar, .titlebar {",
         "  background-color: @term_bg;",
         "  color: @term_fg;",
@@ -184,7 +182,6 @@ QUOTED_PATH_RE = re.compile(r'"([^"]+)"|\'([^\']+)\'')
 DASHED_ITEM_RE = re.compile(r'(?mi)^\s*-\s*(?:"([^"]+)"|\'([^\']+)\')\s*$')
 
 def _parse_alacritty(path: Path) -> Optional[Dict[str, Optional[str]]]:
-    """Prefer TOML, fallback to YAML; return palette dict or None."""
     if not path.exists():
         return None
     text = _read(path)
@@ -227,13 +224,12 @@ def _parse_alacritty(path: Path) -> Optional[Dict[str, Optional[str]]]:
     return {
         "bg": _norm_hex(bg) or "#1e1e1e",
         "fg": _norm_hex(fg) or "#e0e0e0",
-        "sel_bg": _norm_hex(sel_bg) or sel_bg,  # may be rgba() from mix
+        "sel_bg": _norm_hex(sel_bg) or sel_bg,
         "sel_fg": _norm_hex(sel_fg) or sel_fg,
         "caret": _norm_hex(caret) or caret,
     }
 
 def _collect_imports_text(main_path: Path, visited: Set[Path], depth: int = 0, max_depth: int = 8) -> str:
-    """Aggregate alacritty YAML text following import chains (legacy fallback)."""
     if depth > max_depth:
         return ""
     try:
@@ -282,7 +278,6 @@ def _collect_imports_text(main_path: Path, visited: Set[Path], depth: int = 0, m
     return "\n".join(filter(None, combined))
 
 def _palette_from_alacritty_text(txt: str) -> Dict[str, Optional[str]]:
-    """Regex palette extraction from YAML/TOML-ish text (fallback)."""
     out = _empty_palette()
     def block_key(block: str, key: str) -> Optional[str]:
         pat = rf"(?mis)^\s*(?:colors\.\s*)?{block}\s*[:=].*?^\s*{key}\s*[:=]\s*(?P<x>{HEX_RE})"
@@ -322,25 +317,19 @@ def _palette_from_foot_text(txt: str) -> Dict[str, Optional[str]]:
 
 # -------------------- palette sources --------------------
 def _palette_from_theme_dir(theme_dir: Path) -> Dict[str, Optional[str]]:
-    # TOML/YAML via parser (preferred)
     for fname in ("alacritty.toml", "alacritty.yaml", "alacritty.yml"):
         f = theme_dir / fname
         if f.exists():
             pal = _parse_alacritty(f)
             if pal:
                 return pal
-            return _palette_from_alacritty_text(_read(f))  # fallback regex
-
-    # kitty
+            return _palette_from_alacritty_text(_read(f))
     f = theme_dir / "kitty.conf"
     if f.exists():
         return _palette_from_kitty_text(_read(f))
-
-    # foot
     f = theme_dir / "foot.ini"
     if f.exists():
         return _palette_from_foot_text(_read(f))
-
     return _empty_palette()
 
 def _from_env() -> Dict[str, Optional[str]]:
@@ -415,17 +404,12 @@ def _merge_pref(*dicts: Dict[str, Optional[str]]) -> Dict[str, Optional[str]]:
 
 # -------------------- CSS application (GTK4-safe) --------------------
 def _apply_css(css: Optional[str] = None, path: Optional[Path] = None) -> None:
-    """
-    GTK4: install a CSS provider at APPLICATION priority.
-    Passing neither removes the current provider (inherit system).
-    """
     global _CURRENT_PROVIDER
 
     disp = Gdk.Display.get_default()
     if not disp:
         return
 
-    # remove previous provider if present
     if _CURRENT_PROVIDER is not None:
         try:
             Gtk.StyleContext.remove_provider_for_display(disp, _CURRENT_PROVIDER)  # type: ignore
@@ -459,7 +443,6 @@ def apply_best_theme() -> None:
       5) Fallback: ~/.config/gtk-4.0/gtk.css
       6) Else: clear provider (inherit system)
     """
-    # Escape hatch: let user force system theme
     if os.getenv("MICROPAD_THEME_MODE", "").lower() == "system":
         _dbg("Theme mode=system → clearing provider (inherit system).")
         _apply_css(None, None)
@@ -492,19 +475,51 @@ def apply_best_theme() -> None:
 
 # -------------------- watcher --------------------
 class ThemeWatcher:
+    """
+    FileMonitor-based watcher with clean lifecycle:
+    - disconnects Adw.StyleManager signal
+    - cancels Gio.FileMonitor instances
+    - removes GLib timeout sources
+    """
     def __init__(self) -> None:
         self._monitors: list[Gio.FileMonitor] = []
+        self._timeouts: set[int] = set()
+        self._sm = Adw.StyleManager.get_default()
+        self._sm_handler: Optional[int] = self._sm.connect("notify::color-scheme", self._on_style_change)
 
-        # react to system light/dark flips
-        sm = Adw.StyleManager.get_default()
-        sm.connect("notify::color-scheme", self._on_style_change)
-
-        # watch relevant files/dirs
         for p in self._watch_paths():
             self._add_monitor(p)
 
-        # NOTE: no initial apply here; app.py does the first apply in do_startup()
+        _dbg("ThemeWatcher started.")
 
+    def stop(self) -> None:
+        # disconnect style manager signal
+        if self._sm and self._sm_handler:
+            try:
+                self._sm.disconnect(self._sm_handler)
+            except Exception:
+                pass
+            self._sm_handler = None
+
+        # cancel monitors
+        for m in self._monitors:
+            try:
+                m.cancel()
+            except Exception:
+                pass
+        self._monitors.clear()
+
+        # remove pending timeouts
+        for sid in list(self._timeouts):
+            try:
+                GLib.source_remove(sid)
+            except Exception:
+                pass
+        self._timeouts.clear()
+
+        _dbg("ThemeWatcher stopped.")
+
+    # ---- internals ----
     def _watch_paths(self) -> list[Path]:
         cands = [
             OMARCHY_DIR,
@@ -527,11 +542,8 @@ class ThemeWatcher:
     def _add_monitor(self, path: Path) -> None:
         try:
             f = Gio.File.new_for_path(str(path))
-            mon = (
-                f.monitor_directory(Gio.FileMonitorFlags.NONE, None)
-                if path.is_dir()
+            mon = f.monitor_directory(Gio.FileMonitorFlags.NONE, None) if path.is_dir() \
                 else f.monitor_file(Gio.FileMonitorFlags.NONE, None)
-            )
             mon.connect("changed", self._on_changed)
             self._monitors.append(mon)
             _dbg(f"Watching {path}")
@@ -543,9 +555,27 @@ class ThemeWatcher:
         apply_best_theme()
 
     def _on_changed(self, *_args) -> None:
-        # debounce rapid bursts from editors/writes
-        GLib.timeout_add(150, lambda: (apply_best_theme(), False)[1])
+        # debounce rapid bursts and track the timeout id for clean removal
+        def _apply():
+            try:
+                apply_best_theme()
+            finally:
+                return False  # one-shot timeout
 
+        sid = GLib.timeout_add(150, _apply)
+        self._timeouts.add(sid)
 
+# -------------------- singleton helpers --------------------
 def start_theme_watcher() -> ThemeWatcher:
-    return ThemeWatcher()
+    global _WATCHER_SINGLETON
+    if _WATCHER_SINGLETON is None:
+        _WATCHER_SINGLETON = ThemeWatcher()
+    return _WATCHER_SINGLETON
+
+def stop_theme_watcher() -> None:
+    global _WATCHER_SINGLETON
+    if _WATCHER_SINGLETON is not None:
+        try:
+            _WATCHER_SINGLETON.stop()
+        finally:
+            _WATCHER_SINGLETON = None

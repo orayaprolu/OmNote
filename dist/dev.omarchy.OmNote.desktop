@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=MicroPad
+Name=OmNote
 GenericName=Text Editor
 Comment=Tiny GTK4 notepad with Omarchy-aware theming
 Exec=omnote %U
