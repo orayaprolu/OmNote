@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "micropad"
+version = "0.1.0"
+description = "MicroPad — tiny plain-text notepad for Omarchy (GTK4 + libadwaita)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Peter + Atlas" }]
+
+dependencies = []  # GTK/libadwaita/PyGObject are system packages on Arch
+
+[project.optional-dependencies]
+yaml = ["pyyaml>=6"]
+
+[project.scripts]
+micropad = "micropad.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/micropad"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "UP", "B", "PLE", "PLW", "W"]
+ignore = []
+src = ["src"]
+exclude = ["venv", ".venv", "build", "dist"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["micropad"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_unused_ignores = true
+ignore_missing_imports = true
+disallow_untyped_defs = true
+disallow_any_generics = false
+no_implicit_optional = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
