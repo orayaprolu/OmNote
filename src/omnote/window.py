@@ -1,4 +1,4 @@
-# src/micropad/window.py
+# src/omnote/window.py
 from __future__ import annotations
 
 from typing import Optional, Tuple

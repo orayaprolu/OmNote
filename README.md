@@ -20,5 +20,5 @@ Shortcuts:
 - Ctrl+S / Ctrl+Shift+S / Ctrl+N / Ctrl+O / Ctrl+Q
 
 Paths:
-- Config: ~/.config/micropad/state.json
-- Autosave: ~/.cache/micropad/autosave.txt
+- Config: ~/.config/omnote/state.json
+- Autosave: ~/.cache/omnote/autosave.txt

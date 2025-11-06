@@ -1,4 +1,4 @@
-from micropad.replace import replace_all_case_insensitive
+from omnote.replace import replace_all_case_insensitive
 
 
 def test_replace_all_basic():

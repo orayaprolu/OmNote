@@ -1,4 +1,4 @@
-# src/micropad/app.py
+# src/omnote/app.py
 from __future__ import annotations
 import os, sys
 from gi import require_version

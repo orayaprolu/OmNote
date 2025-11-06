@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "micropad"
+name = "omnote"
 version = "0.1.0"
 description = "MicroPad — tiny plain-text notepad for Omarchy (GTK4 + libadwaita)"
 readme = "README.md"
@@ -17,10 +17,11 @@ dependencies = []  # GTK/libadwaita/PyGObject are system packages on Arch
 yaml = ["pyyaml>=6"]
 
 [project.scripts]
-micropad = "micropad.__main__:main"
+omnote = "omnote.__main__:main"
+micropad = "omnote.__main__:main"  # compat
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/micropad"]
+packages = ["src/omnote", "src/micropad"]
 
 [tool.ruff]
 line-length = 100
@@ -31,7 +32,7 @@ src = ["src"]
 exclude = ["venv", ".venv", "build", "dist"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["micropad"]
+known-first-party = ["omnote","micropad"]
 
 [tool.mypy]
 python_version = "3.11"

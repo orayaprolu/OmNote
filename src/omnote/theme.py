@@ -1,4 +1,4 @@
-# src/micropad/theme.py
+# src/omnote/theme.py
 from __future__ import annotations
 
 import os, re, glob

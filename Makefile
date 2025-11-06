@@ -1,7 +1,7 @@
 .PHONY: run install-user uninstall-user
 
 run:
-	PYTHONPATH=src python -m micropad
+	PYTHONPATH=src python -m omnote
 
 install-user:
 	install -Dm644 dist/dev.omarchy.MicroPad.desktop ~/.local/share/applications/dev.omarchy.MicroPad.desktop
