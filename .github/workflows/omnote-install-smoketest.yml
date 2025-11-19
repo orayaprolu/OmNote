@@ -48,14 +48,20 @@ jobs:
             -w /work \
             archlinux:latest \
             bash -lc '
+              set -e
               pacman -Syu --noconfirm \
                 git \
                 python python-pipx python-gobject \
                 gtk4 libadwaita \
-                xorg-server-xvfb && \
-              pipx install . && \
-              export PATH=/root/.local/bin:$PATH && \
-              Xvfb :99 -screen 0 1024x768x24 & \
-              sleep 2 && \
+                xorg-server-xvfb
+
+              pipx install .
+
+              # Ensure pipx-installed apps are on PATH
+              export PATH=/root/.local/bin:$PATH
+
+              Xvfb :99 -screen 0 1024x768x24 &
+              sleep 2
+
               DISPLAY=:99 omnote --help
             '
