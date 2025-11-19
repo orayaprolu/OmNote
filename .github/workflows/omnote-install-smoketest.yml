@@ -6,14 +6,14 @@ on:
   pull_request:
 
 jobs:
-  install-test:
+  ubuntu-install-test:
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Install system dependencies
+      - name: Install system dependencies (Ubuntu)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -21,13 +21,44 @@ jobs:
             python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
             xvfb x11-apps
 
-      - name: Install OmNote into user site-packages
+      - name: Install OmNote into user site-packages (Ubuntu)
         run: |
           python3 -m pip install --user .
 
-      - name: Run omnote --help under Xvfb
+      - name: Run omnote --help under Xvfb (Ubuntu)
         env:
           PATH: $HOME/.local/bin:$PATH
+          DISPLAY: :99
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 2
+          omnote --help
+
+  arch-install-test:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Install system dependencies (Arch)
+        run: |
+          pacman -Syu --noconfirm \
+            git \
+            python python-pipx python-gobject \
+            gtk4 libadwaita \
+            xorg-server-xvfb
+
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install OmNote with pipx (Arch)
+        run: |
+          pipx install .
+          pipx list
+
+      - name: Run omnote --help under Xvfb (Arch)
+        env:
+          PATH: /root/.local/bin:$PATH
           DISPLAY: :99
         run: |
           Xvfb :99 -screen 0 1024x768x24 &
