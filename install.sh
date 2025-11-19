@@ -3,7 +3,7 @@
 
 set -e
 
-echo "🚀 Installing OmNote..."
+echo "🚀 Installing OmNote (via pipx)..."
 
 # Check for required system dependencies
 check_deps() {
@@ -20,6 +20,11 @@ check_deps() {
         fi
     fi
 
+    # Check for pipx
+    if ! command -v pipx &>/dev/null; then
+        missing+=("pipx")
+    fi
+
     # Check for GTK4/libadwaita (via pkg-config or common packages)
     if ! pkg-config --exists gtk4 2>/dev/null && ! pacman -Q gtk4 &>/dev/null && ! dpkg -l libgtk-4-1 &>/dev/null; then
         missing+=("gtk4")
@@ -33,24 +38,33 @@ check_deps() {
         echo "❌ Missing dependencies: ${missing[*]}"
         echo ""
         echo "On Arch Linux:"
-        echo "  sudo pacman -S python python-gobject gtk4 libadwaita"
+        echo "  sudo pacman -S python python-pipx python-gobject gtk4 libadwaita"
         echo ""
         echo "On Ubuntu/Debian:"
-        echo "  sudo apt install python3 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1"
+        echo "  sudo apt install python3 python3-pip python3-gi pipx gir1.2-gtk-4.0 gir1.2-adw-1"
+        echo ""
+        echo "If pipx is not available via your distro, you can install it with:"
+        echo "  python3 -m pip install --user pipx"
+        echo "  pipx ensurepath"
         echo ""
         exit 1
     fi
 }
 
-# Install Python package
+# Install Python package via pipx
 install_package() {
-    echo "📦 Installing OmNote package..."
+    echo "📦 Installing OmNote package with pipx..."
 
-    # Install to user site-packages (no sudo needed)
-    python3 -m pip install --user --upgrade pip setuptools wheel 2>/dev/null || true
-    python3 -m pip install --user -e .
+    # We assume we're in the OmNote repo root.
+    # This installs OmNote into an isolated environment and exposes 'omnote' on PATH.
+    if pipx list 2>/dev/null | grep -q '^omnote '; then
+        echo "ℹ️  Existing OmNote pipx install detected — reinstalling from local source..."
+        pipx reinstall omnote --force
+    else
+        pipx install .
+    fi
 
-    echo "✅ Package installed"
+    echo "✅ OmNote installed via pipx"
 }
 
 # Install desktop integration
@@ -80,8 +94,8 @@ verify() {
     if command -v omnote &>/dev/null; then
         echo "✅ omnote command available"
     else
-        echo "⚠️  omnote command not in PATH"
-        echo "   Add ~/.local/bin to your PATH:"
+        echo "⚠️  omnote command not currently in PATH"
+        echo "   Make sure ~/.local/bin is in your PATH, for example:"
         echo "   export PATH=\"\$HOME/.local/bin:\$PATH\""
     fi
 
@@ -93,7 +107,7 @@ verify() {
 # Main installation flow
 main() {
     echo "════════════════════════════════════════"
-    echo "  OmNote Installer"
+    echo "  OmNote Installer (pipx-based)"
     echo "════════════════════════════════════════"
     echo ""
 
@@ -107,12 +121,14 @@ main() {
     echo "✨ Installation complete!"
     echo ""
     echo "Usage:"
-    echo "  • Launch from Omarchy launcher"
     echo "  • Run: omnote"
-    echo "  • Run: python3 -m omnote"
+    echo "  • Or launch from your desktop environment's app menu as “OmNote”"
+    echo ""
+    echo "To update (later):"
+    echo "  pipx upgrade omnote"
     echo ""
     echo "To uninstall:"
-    echo "  ./uninstall.sh"
+    echo "  pipx uninstall omnote"
     echo "════════════════════════════════════════"
 }
 
