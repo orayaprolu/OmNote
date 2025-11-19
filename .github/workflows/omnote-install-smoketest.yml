@@ -36,35 +36,26 @@ jobs:
 
   arch-install-test:
     runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
 
     steps:
-      - name: Install base shell (Arch fix)
-        run: |
-          pacman -Syu --noconfirm bash
-
-      - name: Install system dependencies (Arch)
-        run: |
-          pacman -Syu --noconfirm \
-            git \
-            python python-pipx python-gobject \
-            gtk4 libadwaita \
-            xorg-server-xvfb
-
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Install OmNote with pipx (Arch)
+      - name: Run Arch pipx install + smoke test in Docker
         run: |
-          pipx install .
-          pipx list
-
-      - name: Run omnote --help under Xvfb (Arch)
-        env:
-          PATH: /root/.local/bin:$PATH
-          DISPLAY: :99
-        run: |
-          Xvfb :99 -screen 0 1024x768x24 &
-          sleep 2
-          omnote --help
+          docker run --rm \
+            -v "$PWD":/work \
+            -w /work \
+            archlinux:latest \
+            bash -lc '
+              pacman -Syu --noconfirm \
+                git \
+                python python-pipx python-gobject \
+                gtk4 libadwaita \
+                xorg-server-xvfb && \
+              pipx install . && \
+              export PATH=/root/.local/bin:$PATH && \
+              Xvfb :99 -screen 0 1024x768x24 & \
+              sleep 2 && \
+              DISPLAY=:99 omnote --help
+            '
