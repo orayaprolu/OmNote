@@ -28,5 +28,8 @@ jobs:
       - name: Run omnote --help under Xvfb
         env:
           PATH: $HOME/.local/bin:$PATH
+          DISPLAY: :99
         run: |
-          xvfb-run -a omnote --help
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 2
+          omnote --help
