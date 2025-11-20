@@ -7,6 +7,18 @@
 OmNote is a lightweight, theme-aware plain-text editor built with GTK4 and libadwaita.  
 It integrates seamlessly with the Omarchy desktop environment and provides a clean, efficient workspace with minimal dependencies and “NASA(ish)-style” code hygiene.
 
+## Screenshots
+
+### Main Window
+![Main Window](assets/screenshot-2025-11-19_19-22-49.png)
+
+### Editing & Tabs
+![Editing Tabs](assets/screenshot-2025-11-19_19-23-59.png)
+
+### Find / Replace UI
+![Find Replace](assets/screenshot-2025-11-19_19-24-32.png)
+
+
 ## Features
 
 - Automatic theme synchronization with Omarchy (supports live updates)
