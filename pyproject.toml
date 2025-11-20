@@ -18,7 +18,6 @@ yaml = ["pyyaml>=6"]
 
 [project.scripts]
 omnote = "omnote.__main__:main"
-micropad = "omnote.__main__:main"  # compat
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/omnote"]
