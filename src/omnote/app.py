@@ -22,7 +22,7 @@ APP_ID = "dev.omarchy.OmNote"
 class OmNote(Adw.Application):
     def __init__(self) -> None:
         # NOTE: GApplication subclass
-        Adw.Application.__init__(self, application_id=APP_ID, flags=Gio.ApplicationFlags.FLAGS_NONE)
+        Adw.Application.__init__(self, application_id=APP_ID, flags=Gio.ApplicationFlags.HANDLES_OPEN)
         self._state: State | None = None
         self._theme_watcher: object | None = None  # ThemeWatcher type from theme module
 
@@ -44,6 +44,14 @@ class OmNote(Adw.Application):
             win.present()
         else:
             self.props.active_window.present()
+
+    def do_open(self, files: list, n_files: int, hint: str) -> None:
+        # Handle files passed via command line or "Open with..."
+        self.do_activate()  # Ensure window exists
+        win = self.props.active_window
+        if win and files:
+            # Open the first file (single-document editor)
+            win._open_file_gfile(files[0])
 
     def do_shutdown(self) -> None:
         # Cleanly stop theme watcher so no monitors/timeouts hold the loop

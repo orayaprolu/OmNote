@@ -1,10 +1,12 @@
 [Desktop Entry]
 Name=OmNote
 Comment=Lightweight notepad for Omarchy
-Exec=omnote
+Exec=omnote %f
 Icon=dev.omarchy.OmNote
 Terminal=false
 Type=Application
 Categories=Utility;TextEditor;
+MimeType=text/plain;text/x-log;text/markdown;text/x-python;text/x-script;application/x-shellscript;
 StartupNotify=true
+StartupWMClass=dev.omarchy.OmNote
 Keywords=text;editor;note;omarchy;
