@@ -133,13 +133,13 @@ omnote --help
 | New tab             | Ctrl+N / Ctrl+T              |
 | Open file           | Ctrl+O                       |
 | Save                | Ctrl+S                       |
+| Save As             | Ctrl+Shift+S                 |
 | Close tab           | Ctrl+W                       |
 | Next/Prev tab       | Ctrl+Tab / Ctrl+Shift+Tab    |
 | Find                | Ctrl+F                       |
 | Find & Replace      | Ctrl+H                       |
 | Toggle line numbers | Ctrl+L                       |
 | Quit                | Ctrl+Q                       |
-| Next/Prev match     | F3 / Shift+F3                |
 
 ## Configuration
 
