@@ -1,13 +1,48 @@
-name: OmNote install smoke test
+name: OmNote CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff
+        run: ruff check src/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests
+        run: PYTHONPATH=src pytest tests/ -v
+
   ubuntu-install-test:
     runs-on: ubuntu-latest
+    needs: [lint, test]
 
     steps:
       - name: Check out code
@@ -36,6 +71,7 @@ jobs:
 
   arch-install-test:
     runs-on: ubuntu-latest
+    needs: [lint, test]
 
     steps:
       - name: Check out code

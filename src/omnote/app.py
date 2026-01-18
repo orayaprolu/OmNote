@@ -22,7 +22,9 @@ APP_ID = "dev.omarchy.OmNote"
 class OmNote(Adw.Application):
     def __init__(self) -> None:
         # NOTE: GApplication subclass
-        Adw.Application.__init__(self, application_id=APP_ID, flags=Gio.ApplicationFlags.HANDLES_OPEN)
+        Adw.Application.__init__(
+            self, application_id=APP_ID, flags=Gio.ApplicationFlags.HANDLES_OPEN
+        )
         self._state: State | None = None
         self._theme_watcher: object | None = None  # ThemeWatcher type from theme module
 

@@ -436,15 +436,10 @@ class OmNoteWindow(Adw.ApplicationWindow):
         Show given bar ('find' or 'replace') with slide-down, or hide with slide-up.
         We collapse the stack (set_visible(False)) only after the hide animation finishes.
         """
-        view = self._get_current_view()
-        if not view:
-            return
-
         if name is None:
             # hide with slide-up transition
             self.top_stack.set_transition_type(Gtk.StackTransitionType.SLIDE_UP)
             self.top_stack.set_visible_child_name("empty")
-            view.set_focusable(True)
             # actual set_visible(False) happens in _on_stack_transition when animation ends
             return
 
@@ -452,7 +447,6 @@ class OmNoteWindow(Adw.ApplicationWindow):
         self.top_stack.set_visible(True)  # make space so animation is visible
         self.top_stack.set_transition_type(Gtk.StackTransitionType.SLIDE_DOWN)
         self.top_stack.set_visible_child_name(name)
-        view.set_focusable(False)  # keep TextView from stealing focus
 
     def _on_stack_transition(self, *_args) -> None:
         """
@@ -484,6 +478,7 @@ class OmNoteWindow(Adw.ApplicationWindow):
             "new": (self._new_file, ["<Primary>n", "<Primary>t"]),  # Ctrl+N or Ctrl+T for new tab
             "open": (self._open_dialog, ["<Primary>o"]),
             "save": (self._save_file, ["<Primary>s"]),
+            "save-as": (self._save_as_dialog, ["<Primary><Shift>s"]),
             "quit": (self._maybe_close, ["<Primary>q"]),
             "close-tab": (self._close_current_tab, ["<Primary>w"]),  # Ctrl+W to close tab
             "toggle-line-numbers": (self._toggle_line_numbers, ["<Primary>l"]),
@@ -983,9 +978,10 @@ class OmNoteWindow(Adw.ApplicationWindow):
                 buf.delete(s, e)
                 ins = buf.get_iter_at_mark(buf.get_insert())
                 buf.insert(ins, repl_text)
-                ns = buf.get_iter_at_mark(buf.get_insert())
-                ne = ns.copy()
-                ne.forward_chars(len(repl_text))
+                # After insert, cursor is at end of replacement text
+                ne = buf.get_iter_at_mark(buf.get_insert())
+                ns = ne.copy()
+                ns.backward_chars(len(repl_text))
                 buf.select_range(ns, ne)
 
         self.find_next(forward=True, use_replace_field=True)
