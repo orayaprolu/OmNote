@@ -53,7 +53,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             python3 python3-pip python3-venv \
-            python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
+            python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-gtksource-5 \
             xvfb x11-apps
 
       - name: Install OmNote into user site-packages (Ubuntu)
@@ -87,7 +87,7 @@ jobs:
               pacman -Syu --noconfirm \
                 git \
                 python python-pipx python-gobject \
-                gtk4 libadwaita \
+                gtk4 libadwaita gtksourceview5 \
                 xorg-server-xvfb
 
               pipx install --system-site-packages .
