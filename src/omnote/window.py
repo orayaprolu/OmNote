@@ -86,6 +86,15 @@ class OmNoteWindow(Adw.ApplicationWindow):
         # Track (widget, signal_id) pairs for cleanup - use Any for widget type
         self._signal_ids: list[tuple[Gtk.Widget, int]] = []
 
+        # Font size CSS provider
+        self._font_css_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(),
+            self._font_css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
+        )
+        self._apply_font_size_css()
+
         # ---------- layout ----------
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.set_content(root)
@@ -484,6 +493,8 @@ class OmNoteWindow(Adw.ApplicationWindow):
             "toggle-line-numbers": (self._toggle_line_numbers, ["<Primary>l"]),
             "next-tab": (self._next_tab, ["<Primary>Tab"]),  # Ctrl+Tab
             "prev-tab": (self._prev_tab, ["<Primary><Shift>Tab"]),  # Ctrl+Shift+Tab
+            "font-increase": (self._increase_font_size, ["<Primary>equal", "<Primary>plus"]),
+            "font-decrease": (self._decrease_font_size, ["<Primary>minus"]),
         }
         for name, (cb, accels) in actions.items():
             act = Gio.SimpleAction.new(name, None)
@@ -519,6 +530,23 @@ class OmNoteWindow(Adw.ApplicationWindow):
         current = view.get_show_line_numbers()
         view.set_show_line_numbers(not current)
         _log(f"Line numbers toggled: {current} -> {not current}")
+
+    def _apply_font_size_css(self) -> None:
+        """Apply the current font size to the editor via a CSS provider."""
+        css = f"textview {{ font-size: {self.state.font_size}pt; }}"
+        self._font_css_provider.load_from_data(css.encode("utf-8"))
+
+    def _increase_font_size(self) -> None:
+        if self.state.font_size < 72:
+            self.state.font_size += 1
+            self._apply_font_size_css()
+            self.state.save()
+
+    def _decrease_font_size(self) -> None:
+        if self.state.font_size > 6:
+            self.state.font_size -= 1
+            self._apply_font_size_css()
+            self.state.save()
 
     def _close_current_tab(self) -> None:
         """Close the currently active tab."""

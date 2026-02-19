@@ -56,6 +56,7 @@ class State:
     tabs: list[TabState] = field(default_factory=list)
     active_tab_index: int = 0
     geometry: Geometry = field(default_factory=Geometry)
+    font_size: int = 13
 
     @classmethod
     def load(cls) -> State:
@@ -81,7 +82,9 @@ class State:
                     if active_tab_index < 0 or (tabs and active_tab_index >= len(tabs)):
                         active_tab_index = 0
 
-                    return cls(tabs=tabs, active_tab_index=active_tab_index, geometry=geom)
+                    font_size = data.get("font_size", 13)
+
+                    return cls(tabs=tabs, active_tab_index=active_tab_index, geometry=geom, font_size=font_size)
             except Exception:
                 # If corrupted, try the next option or return default
                 continue
@@ -102,6 +105,7 @@ class State:
                 for t in self.tabs
             ],
             "active_tab_index": self.active_tab_index,
+            "font_size": self.font_size,
             "geometry": {
                 "width": self.geometry.width,
                 "height": self.geometry.height,
