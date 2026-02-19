@@ -57,12 +57,7 @@ install_package() {
 
     # We assume we're in the OmNote repo root.
     # This installs OmNote into an isolated environment and exposes 'omnote' on PATH.
-    if pipx list 2>/dev/null | grep -q '^omnote '; then
-        echo "ℹ️  Existing OmNote pipx install detected — reinstalling from local source..."
-        pipx reinstall omnote --force
-    else
-        pipx install .
-    fi
+    pipx install --force --system-site-packages .
 
     echo "✅ OmNote installed via pipx"
 }

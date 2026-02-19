@@ -5,10 +5,10 @@ set -e
 
 echo "🗑️  Uninstalling OmNote..."
 
-# Remove Python package
-if python3 -m pip show omnote &>/dev/null; then
+# Remove Python package (installed via pipx)
+if pipx list 2>/dev/null | grep -q 'omnote'; then
     echo "📦 Removing Python package..."
-    python3 -m pip uninstall -y omnote
+    pipx uninstall omnote
     echo "✅ Package removed"
 fi
 
